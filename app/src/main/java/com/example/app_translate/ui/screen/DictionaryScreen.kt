@@ -78,7 +78,7 @@ fun DictionaryScreen(
             try {
                 val key = BuildConfig.GEMINI_API_KEY
                 if (key.isBlank()) return@withContext null
-                val prompt = "Act as a dictionary. Look up the word \"$word\" in ${lang.name}. Return valid JSON only with: word, phonetic (pronunciation), meanings (array of {partOfSpeech, definitions (array of string, max 3), synonyms (array of string, max 5), antonyms (array of string, max 5)}). No explanation outside JSON."
+                val prompt = "Act as a dictionary. Look up the word \"$word\" in ${lang.name}. Return valid JSON only with: word, phonetic (pronunciation), meanings (array of {partOfSpeech (in ${lang.name} language, e.g. noun=substantivo for Portuguese, kata benda for Indonesian, naran for Tetum), definitions (array of string, max 3), synonyms (array of string, max 5), antonyms (array of string, max 5)}). No explanation outside JSON."
                 val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$key")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"

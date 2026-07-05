@@ -5,10 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_translate.data.local.AppDatabase
 import com.example.app_translate.data.local.HistoryEntity
-import com.example.app_translate.data.model.DictionaryEntry
 import com.example.app_translate.data.model.Language
 import com.example.app_translate.data.model.languages
-import com.example.app_translate.data.repository.DictionaryRepository
 import com.example.app_translate.data.repository.TranslateRepository
 import com.google.mlkit.nl.languageid.LanguageIdentification
 import kotlinx.coroutines.Job
@@ -21,14 +19,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
-data class DialogueMessage(
-    val originalText: String,
-    val translatedText: String,
-    val sourceLangCode: String,
-    val targetLangCode: String,
-    val isFromMe: Boolean = true
-)
-
 data class TranslatorUiState(
     val sourceLang: Language = languages[0],
     val targetLang: Language = languages[9],
@@ -39,17 +29,12 @@ data class TranslatorUiState(
     val detectedLanguage: Language? = null,
     val isFavorited: Boolean = false,
     val historyList: List<HistoryEntity> = emptyList(),
-    val dialogueMessages: List<DialogueMessage> = emptyList(),
-    val manualSource: Boolean = false,
-    val dictionaryResult: DictionaryEntry? = null,
-    val isDictionaryLoading: Boolean = false,
-    val isDictionaryError: Boolean = false
+    val manualSource: Boolean = false
 )
 
 class TranslatorViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = TranslateRepository()
-    private val dictionaryRepository = DictionaryRepository()
     private val db = AppDatabase.getDatabase(application)
     private val historyDao = db.historyDao()
 
@@ -104,6 +89,11 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
         triggerTranslate()
     }
 
+    fun enableAutoDetect() {
+        _uiState.update { it.copy(manualSource = false) }
+        triggerTranslate()
+    }
+
     fun toggleFavorite() {
         val state = _uiState.value
         if (state.outputText.isBlank()) return
@@ -115,17 +105,6 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
             if (existing != null) {
                 historyDao.setFavorite(existing.id, !state.isFavorited)
                 _uiState.update { it.copy(isFavorited = !it.isFavorited) }
-            } else {
-                historyDao.insertHistory(
-                    HistoryEntity(
-                        sourceText = state.inputText,
-                        targetText = state.outputText,
-                        sourceLang = state.sourceLang.name,
-                        targetLang = state.targetLang.name,
-                        isFavorite = true
-                    )
-                )
-                _uiState.update { it.copy(isFavorited = true) }
             }
         }
     }
@@ -204,7 +183,7 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
             )
             result.fold(
                 onSuccess = { translated ->
-                    _uiState.update { it.copy(outputText = translated, isLoading = false, isFavorited = false) }
+                    _uiState.update { it.copy(outputText = translated, isLoading = false) }
                     addToHistory(
                         state.inputText,
                         translated,
@@ -215,9 +194,7 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
                         state.inputText, translated,
                         state.sourceLang.name, state.targetLang.name
                     )
-                    if (existing?.isFavorite == true) {
-                        _uiState.update { it.copy(isFavorited = true) }
-                    }
+                    _uiState.update { it.copy(isFavorited = existing?.isFavorite == true) }
                 },
                 onFailure = {
                     _uiState.update {
@@ -230,35 +207,6 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
                 }
             )
         }
-    }
-
-    // --- Dialogue Functions ---
-    fun addDialogueMessage(text: String, isFromMe: Boolean) {
-        val state = _uiState.value
-        viewModelScope.launch {
-            val result = repository.translate(
-                text,
-                state.sourceLang.apiCode,
-                state.targetLang.apiCode
-            )
-            result.fold(
-                onSuccess = { translated ->
-                    val message = DialogueMessage(
-                        originalText = text,
-                        translatedText = translated,
-                        sourceLangCode = state.sourceLang.apiCode,
-                        targetLangCode = state.targetLang.apiCode,
-                        isFromMe = isFromMe
-                    )
-                    _uiState.update { it.copy(dialogueMessages = it.dialogueMessages + message) }
-                },
-                onFailure = {}
-            )
-        }
-    }
-
-    fun clearDialogue() {
-        _uiState.update { it.copy(dialogueMessages = emptyList()) }
     }
 
     // --- History Functions ---
@@ -278,47 +226,5 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun clearHistory() {
         viewModelScope.launch { historyDao.clearAll() }
-    }
-
-    // --- Dictionary Functions ---
-    fun lookupWord(word: String) {
-        if (word.isBlank()) return
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isDictionaryLoading = true,
-                    isDictionaryError = false,
-                    dictionaryResult = null
-                )
-            }
-            val result = dictionaryRepository.lookup(word)
-            result.fold(
-                onSuccess = { entry ->
-                    _uiState.update {
-                        it.copy(
-                            dictionaryResult = entry,
-                            isDictionaryLoading = false
-                        )
-                    }
-                },
-                onFailure = {
-                    _uiState.update {
-                        it.copy(
-                            isDictionaryError = true,
-                            isDictionaryLoading = false
-                        )
-                    }
-                }
-            )
-        }
-    }
-
-    fun clearDictionaryResult() {
-        _uiState.update {
-            it.copy(
-                dictionaryResult = null,
-                isDictionaryError = false
-            )
-        }
     }
 }

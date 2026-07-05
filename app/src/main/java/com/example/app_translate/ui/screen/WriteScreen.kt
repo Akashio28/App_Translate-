@@ -20,8 +20,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_translate.BuildConfig
@@ -48,7 +48,8 @@ data class GrammarError(val offset: Int, val length: Int, val message: String, v
 @Composable
 fun WriteScreen(
     selectedLang: Language,
-    onLangClick: () -> Unit
+    onLangClick: () -> Unit,
+    onLanguageDetected: ((Language) -> Unit)? = null
 ) {
     var inputText by remember { mutableStateOf("") }
     var resultText by remember { mutableStateOf("") }
@@ -60,7 +61,7 @@ fun WriteScreen(
     val scope = rememberCoroutineScope()
     val languageIdentifier = remember { LanguageIdentification.getClient() }
 
-    val modes = listOf("Check Grammar", "Formal", "Casual", "Expand")
+    val modes = listOf("Check Grammar", "Formal", "Expand")
 
     suspend fun processWithGemini(text: String, prompt: String): String {
         return withContext(Dispatchers.IO) {
@@ -99,8 +100,9 @@ fun WriteScreen(
     suspend fun grammarViaGemini(text: String, lang: String): Pair<String, List<GrammarError>> {
         val langPrompt = "Check the grammar of this $lang text. Return valid JSON only with 'corrected' (corrected text) and 'errors' (array of {offset, length, message, replacement}). Text:\n\n$text"
         val response = processWithGemini(text, langPrompt)
+        val cleaned = response.replace("""```json""".toRegex(), "").replace("""```""".toRegex(), "").trim()
         return try {
-            val json = JSONObject(response)
+            val json = JSONObject(cleaned)
             val corrected = json.getString("corrected")
             val arr = json.getJSONArray("errors")
             val errors = mutableListOf<GrammarError>()
@@ -162,7 +164,6 @@ fun WriteScreen(
             else -> {
                 val prompt = when (mode) {
                     "Formal"  -> "Rewrite the following $langName text in a professional formal style. Only show the result:\n\n$text"
-                    "Casual"  -> "Rewrite the following $langName text in a casual and natural style. Only show the result:\n\n$text"
                     "Expand"  -> "Expand the following $langName text with more complete details. Only show the result:\n\n$text"
                     else      -> text
                 }
@@ -184,7 +185,7 @@ fun WriteScreen(
                     if (d != null) {
                         detectedLang = d
                         if (!manualLang) {
-                            // Auto-set the language picker to detected language
+                            onLanguageDetected?.invoke(d)
                         }
                     }
                 }
@@ -298,7 +299,12 @@ fun WriteScreen(
                 if (annotatedText != null) {
                     var textFieldValue by remember { mutableStateOf(TextFieldValue(annotatedText)) }
                     LaunchedEffect(grammarErrors) {
-                        textFieldValue = TextFieldValue(annotatedText, textFieldValue.selection)
+                        val newTfv = TextFieldValue(annotatedText)
+                        val s = textFieldValue.selection
+                        textFieldValue = newTfv.copy(selection = androidx.compose.ui.text.TextRange(
+                            start = s.start.coerceIn(0, newTfv.text.length),
+                            end = s.end.coerceIn(0, newTfv.text.length)
+                        ))
                     }
                     BasicTextField(
                         value = textFieldValue,

@@ -50,6 +50,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import java.net.HttpURLConnection
+import java.net.URL
+import org.json.JSONArray
+import org.json.JSONObject
 import androidx.compose.animation.core.tween
 
 private val DeepLBlue      = Color(0xFF1A56DB)
@@ -73,8 +77,7 @@ fun TranslatorScreen(
     var currentTab       by remember { mutableStateOf("translate") }
     var showSourcePicker by remember { mutableStateOf(false) }
     var showTargetPicker by remember { mutableStateOf(false) }
-    var showAlternatives by remember { mutableStateOf(false) }
-    var alternativeTab   by remember { mutableStateOf("word") }
+    var autoDetect by remember { mutableStateOf(true) }
 
     var undoStack by remember { mutableStateOf(listOf<String>()) }
     var redoStack by remember { mutableStateOf(listOf<String>()) }
@@ -124,7 +127,15 @@ fun TranslatorScreen(
         if (!ttsReady() || text.isBlank()) return
         val locale = when (langCode) {
             "en" -> Locale.US
+            "pt" -> Locale("pt", "PT")
             "id" -> Locale("in", "ID")
+            "es" -> Locale("es", "ES")
+            "fr" -> Locale("fr", "FR")
+            "ja" -> Locale.JAPAN
+            "de" -> Locale.GERMANY
+            "ar" -> Locale("ar", "SA")
+            "zh" -> Locale.CHINA
+            "tet" -> Locale("pt", "PT")
             else -> Locale.US
         }
         tts?.language = locale
@@ -195,8 +206,14 @@ fun TranslatorScreen(
         LanguagePickerDialog(
             title = "Choose Source Language",
             currentLang = uiState.sourceLang,
-            onLanguageSelected = { viewModel.onSourceLangChanged(it); showSourcePicker = false },
-            onDismiss = { showSourcePicker = false }
+            onLanguageSelected = { autoDetect = false; viewModel.onSourceLangChanged(it); showSourcePicker = false },
+            onDismiss = { showSourcePicker = false },
+            showAutoDetect = true,
+            onAutoDetectSelected = {
+                autoDetect = true
+                viewModel.enableAutoDetect()
+                showSourcePicker = false
+            }
         )
     }
     if (showTargetPicker) {
@@ -297,12 +314,11 @@ fun TranslatorScreen(
                             Text("Write", color = Color(0xFF7B61FF), fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         }
                     }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.Tune, null, tint = Color(0xFF888888), modifier = Modifier.size(24.dp))
                 }
                 WriteScreen(
                     selectedLang = writeLang,
-                    onLangClick = { showWriteLangPicker = true }
+                    onLangClick = { showWriteLangPicker = true },
+                    onLanguageDetected = { lang -> writeLang = lang }
                 )
             }
         }
@@ -362,7 +378,7 @@ fun TranslatorScreen(
                     }
                 }
 
-                // KONTEN
+                                // KONTEN
                 Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
                     // INPUT AREA
@@ -502,21 +518,6 @@ fun TranslatorScreen(
                                 IconButton(onClick = { speakText(uiState.outputText, uiState.targetLang.code) }) {
                                     Icon(Icons.Default.VolumeUp, null, tint = DeepLTextBlack, modifier = Modifier.size(22.dp))
                                 }
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = DeepLBlueBg,
-                                    modifier = Modifier.clickable {
-                                        showAlternatives = !showAlternatives
-                                        if (showAlternatives) alternativeTab = "word"
-                                    }
-                                ) {
-                                    Text(
-                                        "Alternatives", color = DeepLBlue, fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                    )
-                                }
                                 Spacer(modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.toggleFavorite() }) {
                         Icon(
@@ -534,64 +535,6 @@ fun TranslatorScreen(
                                 }
                             }
 
-                            if (showAlternatives) {
-                                HorizontalDivider(color = DeepLDivider)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    listOf("word" to "Word", "sentence" to "Sentence").forEach { (key, label) ->
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = if (alternativeTab == key) DeepLBlueBg else Color.Transparent,
-                                            modifier = Modifier.clickable { alternativeTab = key }
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.List, null,
-                                                    tint = if (alternativeTab == key) DeepLBlue else Color(0xFF888888),
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(
-                                                    label,
-                                                    color = if (alternativeTab == key) DeepLBlue else Color(0xFF888888),
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (alternativeTab == key) FontWeight.Medium else FontWeight.Normal
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                    }
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    IconButton(onClick = { showAlternatives = false }) {
-                                        Icon(Icons.Default.Close, null, tint = Color(0xFF888888), modifier = Modifier.size(20.dp))
-                                    }
-                                }
-                                val alts = if (alternativeTab == "word")
-                                    listOf("Hello,...", "Hi,...", "Hey,...")
-                                else
-                                    listOf(
-                                        "${uiState.outputText}...",
-                                        "Well, ${uiState.outputText.lowercase()}...",
-                                        "Actually, ${uiState.outputText.lowercase()}..."
-                                    )
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    alts.forEach { alt ->
-                                        Text(
-                                            text = alt, fontSize = 16.sp, color = DeepLTextBlack,
-                                            modifier = Modifier.fillMaxWidth()
-                                                .clickable { viewModel.onInputChanged(alt.removeSuffix("...")) }
-                                                .padding(horizontal = 20.dp, vertical = 14.dp)
-                                        )
-                                        HorizontalDivider(color = Color(0xFFF0F0F0), modifier = Modifier.padding(horizontal = 16.dp))
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-                            }
                         }
                     }
                 }
@@ -612,7 +555,10 @@ fun TranslatorScreen(
                             modifier = Modifier.fillMaxWidth().clickable { showSourcePicker = true }
                         ) {
                             Text(
-                                uiState.sourceLang.name, color = Color.White, fontSize = 15.sp,
+                                if (autoDetect && uiState.detectedLanguage != null) uiState.detectedLanguage!!.name
+                                else if (autoDetect) "Auto Detect"
+                                else uiState.sourceLang.name,
+                                color = Color.White, fontSize = 15.sp,
                                 modifier = Modifier.padding(vertical = 13.dp).wrapContentWidth(Alignment.CenterHorizontally)
                             )
                         }
@@ -625,7 +571,7 @@ fun TranslatorScreen(
                         }
                     }
                     IconButton(
-                        onClick = { viewModel.onSwapLanguages() },
+                        onClick = { autoDetect = false; viewModel.onSwapLanguages() },
                         modifier = Modifier.padding(horizontal = 8.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.CompareArrows, null,
