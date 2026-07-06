@@ -68,7 +68,7 @@ fun WriteScreen(
             try {
                 val key = BuildConfig.GEMINI_API_KEY
                 if (key.isBlank()) return@withContext "Gemini API key not configured. Add GEMINI_API_KEY to local.properties"
-                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=" + key)
+                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key)
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")

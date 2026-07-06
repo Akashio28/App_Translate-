@@ -48,7 +48,7 @@ fun DialogueScreen() {
     suspend fun sendToGemini(userMessage: String): String {
         return withContext(Dispatchers.IO) {
             try {
-                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$apiKey")
+                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")

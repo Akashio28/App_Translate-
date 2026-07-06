@@ -78,8 +78,9 @@ fun DictionaryScreen(
             try {
                 val key = BuildConfig.GEMINI_API_KEY
                 if (key.isBlank()) return@withContext null
-                val prompt = "Act as a dictionary. Look up the word \"$word\" in ${lang.name}. Return valid JSON only with: word, phonetic (pronunciation), meanings (array of {partOfSpeech (in ${lang.name} language, e.g. noun=substantivo for Portuguese, kata benda for Indonesian, naran for Tetum), definitions (array of string, max 3), synonyms (array of string, max 5), antonyms (array of string, max 5)}). No explanation outside JSON."
-                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=$key")
+                val langInstruction = if (lang.code == "tet") "IMPORTANT: All output must be in Tetum language, NOT Portuguese. Use proper Tetum words like naran, hanesan, la hanesan." else ""
+                val prompt = "Act as a dictionary. Look up the word \"$word\" in ${lang.name}. $langInstruction Return valid JSON only with: word, phonetic (pronunciation), meanings (array of {partOfSpeech (in ${lang.name} language, e.g. noun=substantivo for Portuguese, kata benda for Indonesian, naran for Tetum), definitions (array of string, max 3, ALL definitions must be in ${lang.name} language), synonyms (array of string, max 5, ALL synonyms must be in ${lang.name} language), antonyms (array of string, max 5, ALL antonyms must be in ${lang.name} language)}). No explanation outside JSON. CRITICAL: The word, phonetic, definitions, synonyms, antonyms, and partOfSpeech must ALL be in ${lang.name} language."
+                val url = URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$key")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
