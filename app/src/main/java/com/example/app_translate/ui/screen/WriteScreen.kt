@@ -40,7 +40,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
-val languageToolCodes = setOf("en-US", "en", "pt-PT", "pt-BR", "pt", "id", "es", "fr", "de", "ja", "zh", "ar", "ru", "it", "nl")
+private val languageToolCodes = setOf("en-US", "en", "pt-PT", "pt-BR", "pt", "id", "es", "fr", "de", "ja", "zh", "ar", "ru", "it", "nl")
 
 data class GrammarError(val offset: Int, val length: Int, val message: String, val replacement: String)
 
@@ -298,7 +298,7 @@ fun WriteScreen(
 
                 if (annotatedText != null) {
                     var textFieldValue by remember { mutableStateOf(TextFieldValue(annotatedText)) }
-                    LaunchedEffect(grammarErrors) {
+                    LaunchedEffect(grammarErrors, inputText) {
                         val newTfv = TextFieldValue(annotatedText)
                         val s = textFieldValue.selection
                         textFieldValue = newTfv.copy(selection = androidx.compose.ui.text.TextRange(

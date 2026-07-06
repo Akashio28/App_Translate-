@@ -328,13 +328,7 @@ fun DictionaryScreen(
                             color = Color.LightGray,
                             fontSize = 13.sp
                         )
-                        // TAMBAHAN
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "",
-                            color = Color.LightGray,
-                            fontSize = 12.sp
-                        )
+
                     }
                 }
             }

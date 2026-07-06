@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,10 +51,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import java.net.HttpURLConnection
-import java.net.URL
-import org.json.JSONArray
-import org.json.JSONObject
 import androidx.compose.animation.core.tween
 
 private val DeepLBlue      = Color(0xFF1A56DB)
@@ -62,7 +59,7 @@ private val DeepLGrayBg    = Color(0xFFF0F0F0)
 private val DeepLDarkBar   = Color(0xFF4A4A4A)
 private val DeepLTextBlack = Color(0xFF1A1A1A)
 private val DeepLTextGray  = Color(0xFFAAAAAA)
-private val DeepLDivider   = Color(0xFFE5E5E5)
+private val DeepLDivider  = Color(0xFFE0E0E0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,10 +74,10 @@ fun TranslatorScreen(
     var currentTab       by remember { mutableStateOf("translate") }
     var showSourcePicker by remember { mutableStateOf(false) }
     var showTargetPicker by remember { mutableStateOf(false) }
-    var autoDetect by remember { mutableStateOf(true) }
+    var autoDetect by rememberSaveable { mutableStateOf(true) }
 
-    var undoStack by remember { mutableStateOf(listOf<String>()) }
-    var redoStack by remember { mutableStateOf(listOf<String>()) }
+    var undoStack by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var redoStack by rememberSaveable { mutableStateOf(listOf<String>()) }
 
     val recognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
@@ -556,7 +553,6 @@ fun TranslatorScreen(
                         ) {
                             Text(
                                 if (autoDetect && uiState.detectedLanguage != null) uiState.detectedLanguage!!.name
-                                else if (autoDetect) "Auto Detect"
                                 else uiState.sourceLang.name,
                                 color = Color.White, fontSize = 15.sp,
                                 modifier = Modifier.padding(vertical = 13.dp).wrapContentWidth(Alignment.CenterHorizontally)

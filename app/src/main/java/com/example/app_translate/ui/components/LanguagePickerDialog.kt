@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.example.app_translate.data.model.Language
 import com.example.app_translate.data.model.languages
-import androidx.compose.ui.text.font.FontWeight
 import com.example.app_translate.ui.theme.PurpleColor
 
 @Composable

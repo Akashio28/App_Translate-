@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.example.app_translate.ui.theme.PurpleColor
 import com.example.app_translate.viewmodel.TranslatorViewModel
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -230,6 +229,8 @@ fun CameraScreen(
                                                     image.close()
                                                 }
                                                 .addOnFailureListener { image.close() }
+                                        } else {
+                                            image.close()
                                         }
                                     }
                                 }

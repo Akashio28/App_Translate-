@@ -127,8 +127,10 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
         translateJob?.cancel()
         translateJob = viewModelScope.launch {
             delay(600)
+            val currentText = _uiState.value.inputText
+            if (currentText.isBlank()) return@launch
             _uiState.update { it.copy(isLoading = true, isError = false) }
-            languageIdentifier.identifyLanguage(state.inputText)
+            languageIdentifier.identifyLanguage(currentText)
                 .addOnSuccessListener { code ->
                     if (code != "und") {
                         val detected = languages.find { it.code == code }
@@ -144,7 +146,7 @@ class TranslatorViewModel(application: Application) : AndroidViewModel(applicati
                     performTranslation(_uiState.value)
                 }
                 .addOnFailureListener {
-                    fallbackDetectAndTranslate(state.inputText)
+                    fallbackDetectAndTranslate(_uiState.value.inputText)
                 }
         }
     }
