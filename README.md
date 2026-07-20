@@ -228,7 +228,7 @@ App_Translate/
 
 ## Tetum
 
-TranslaTecho mak aplikasaun tradusaun Android modernu ida ne'ebé dezenvolve ho **Kotlin** no **Jetpack Compose**. Aplikasaun ne'e fornese tradusaun testu, OCR ho kamera, buka liafuan iha diksionáriu, verifika gramática, asisténsia hakerek ho AI, no xat ho AI — hotu ho interface Material 3 ne'ebé moos no fàsil uza.
+Lalakar mak aplikasaun tradusaun Android modernu ida ne'ebé dezenvolve ho **Kotlin** no **Jetpack Compose**. Aplikasaun ne'e fornese tradusaun testu, OCR ho kamera, buka liafuan iha diksionáriu, verifika gramática, asisténsia hakerek ho AI, no xat ho AI — hotu ho interface Material 3 ne'ebé moos no fàsil uza.
 
 ### Funsaun Sira
 
