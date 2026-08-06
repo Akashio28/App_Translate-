@@ -1,4 +1,4 @@
-# TranslaTecho
+# Lalakar 
 
 **App Translate** — Aplikasaun Tradusaun Modernu / Modern Translation App
 
