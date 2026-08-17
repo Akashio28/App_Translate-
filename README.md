@@ -1,6 +1,6 @@
 # Lalakar 
 
-**App Translate** — Aplikasaun Tradusaun Modernu / Modern Translation App
+**App Translate** — Aplikasaun Tradusaun Modernu / Modern Translation Ap
 
 ---
 
