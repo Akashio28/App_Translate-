@@ -1,4 +1,4 @@
-# Lalakar 
+### Lalakar 
 
 **App Translate** — Aplikasaun Tradusaun Modernu / Modern Translation Ap
 
